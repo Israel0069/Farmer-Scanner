@@ -33,19 +33,6 @@
             margin-bottom: 20px;
         }
 
-        .row {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .col {
-            width: 100%;
-            max-width: 48%;
-            padding: 10px;
-        }
-
         #my-qr-reader {
             padding: 20px;
             border: 1.5px solid #b2b2b2;
@@ -67,11 +54,6 @@
             padding: 10px;
             border-radius: 4px;
             margin-top: 10px;
-        }
-
-        img {
-            border-radius: 50%;
-            margin-top: 15px;
         }
 
         table {
@@ -111,76 +93,54 @@
                 max-width: 100%;
             }
         }
+
+        #profile-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>QR Code Scanner / Reader</h1>
-        <div class="row">
-            <div class="col">
-                <div id="my-qr-reader"></div>
-            </div>
-            <div class="col">
-                <h4>SCAN RESULT</h4>
-                <div id="result">Result Here</div>
-                <img id="profile-image" src="" alt="Profile Image" style="display:none;" width="100">
-                <button onclick="copyToClipboard()">Copy to Clipboard</button>
-            </div>
+        <div id="my-qr-reader"></div>
+        <h4>SCAN RESULT</h4>
+        <div id="result">
+            <p><strong>Purchase Code:</strong> <span id="purchase-code">-</span></p>
+            <p><strong>Full Name:</strong> <span id="full-name">-</span></p>
+            <p><strong>Barangay:</strong> <span id="barangay">-</span></p>
+            <img id="profile-img" src="" alt="Profile Image" />
         </div>
-
-        <!-- Form to display scanned product info -->
-        <form id="scanned-products-form">
-            <table id="product-table">
-                <thead>
-                    <tr>
-                        <th>Purchase Code</th>
-                        <th>Full Name</th>
-                        <th>Username</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Data will be appended here -->
-                </tbody>
-            </table>
-        </form>
-
-        <button onclick="location.reload();">Reset</button>
     </div>
 
     <script type="text/javascript">
         let isProcessing = false; // Variable to control scan delay
-        let scannedProducts = []; // Array to store scanned products
 
         function onScanSuccess(qrCodeMessage) {
             if (isProcessing) return; // Ignore scans during the delay
             isProcessing = true;
 
             try {
-                // Extract data from the scanned QR code
                 const qrData = JSON.parse(qrCodeMessage);
-                const { Purchase_code, full_name, email, facebook_profile_image } = qrData;
+                const { Purchase_code, full_name, barangay, facebook_profile_image } = qrData;
 
-                scannedProducts.push({ Purchase_code, full_name, email });
-
-                // Add data to the table
-                const productTable = document.querySelector('#product-table tbody');
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `<td>${Purchase_code}</td><td>${full_name}</td><td>${email}</td>`;
-                productTable.appendChild(newRow);
-
-                // Display profile image
-                const profileImage = document.getElementById('profile-image');
-                profileImage.src = facebook_profile_image;
-                profileImage.style.display = 'block';
+                // Update result section with QR data
+                document.getElementById('purchase-code').innerText = Purchase_code;
+                document.getElementById('full-name').innerText = full_name;
+                document.getElementById('barangay').innerText = barangay;
+                document.getElementById('profile-img').src = facebook_profile_image;
 
                 // Voice feedback
-                speak(`Scanned customer: ${full_name}`);
+                speak(`Scanned purchase code: ${Purchase_code}, Full name: ${full_name}, Barangay: ${barangay}`);
 
             } catch (error) {
                 document.getElementById('result').innerHTML = `<span class="result">Invalid QR Code Data</span>`;
             }
 
-            // 10-second delay
+            // 10-second delay before processing the next scan
             setTimeout(() => {
                 isProcessing = false;
             }, 10000);
@@ -194,23 +154,6 @@
             "my-qr-reader", { fps: 10, qrbox: 250 }
         );
         html5QrcodeScanner.render(onScanSuccess, onScanError);
-
-        function copyToClipboard() {
-            let resultText = "";
-            scannedProducts.forEach(product => {
-                 resultText += `Purchase Code: ${product.Purchase_code}, Full Name: ${product.full_name}, Email: ${product.email}\n\n`; // Adding an extra newline
-            });
-           
-            // Create a temporary input to copy text to clipboard
-            const tempInput = document.createElement('input');
-            document.body.appendChild(tempInput);
-            tempInput.value = resultText;
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-
-            alert('Result copied to clipboard!');
-        }
 
         // Function for voice feedback
         function speak(message) {
