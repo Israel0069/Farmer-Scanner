@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Scanner / Reader</title>
     <script src="html5-qrcode.min.js"></script>
-     <style>
+    <style>
         body {
             display: flex;
             justify-content: center;
@@ -114,6 +114,10 @@
             <p><strong>Barangay:</strong> <span id="barangay">-</span></p>
             <img id="profile-img" src="" alt="Profile Image" />
         </div>
+        <div>
+            <button onclick="copyToClipboard()">Copy to Clipboard</button>
+            <button onclick="printResult()">Print Result</button>
+        </div>
     </div>
 
     <script type="text/javascript">
@@ -140,10 +144,10 @@
                 document.getElementById('result').innerHTML = `<span class="result">Invalid QR Code Data</span>`;
             }
 
-            // 10-second delay before processing the next scan
+            // 3-second delay before processing the next scan
             setTimeout(() => {
                 isProcessing = false;
-            }, 10000);
+            }, 3000);
         }
 
         function onScanError(errorMessage) {
@@ -154,6 +158,39 @@
             "my-qr-reader", { fps: 10, qrbox: 250 }
         );
         html5QrcodeScanner.render(onScanSuccess, onScanError);
+
+        // Copy Purchase Code, Full Name, and Barangay to clipboard
+        function copyToClipboard() {
+            const purchaseCode = document.getElementById('purchase-code').innerText;
+            const fullName = document.getElementById('full-name').innerText;
+            const barangay = document.getElementById('barangay').innerText;
+            const textToCopy = `Purchase Code: ${purchaseCode}\nFull Name: ${fullName}\nBarangay: ${barangay}`;
+            
+            const textArea = document.createElement('textarea');
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Copied to clipboard!');
+        }
+
+        // Print Purchase Code, Full Name, and Barangay
+        function printResult() {
+            const purchaseCode = document.getElementById('purchase-code').innerText;
+            const fullName = document.getElementById('full-name').innerText;
+            const barangay = document.getElementById('barangay').innerText;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`<html><head><title>Print Result</title></head><body>`);
+            printWindow.document.write(`<h3>Scan Result</h3>`);
+            printWindow.document.write(`<p><strong>Purchase Code:</strong> ${purchaseCode}</p>`);
+            printWindow.document.write(`<p><strong>Full Name:</strong> ${fullName}</p>`);
+            printWindow.document.write(`<p><strong>Barangay:</strong> ${barangay}</p>`);
+            printWindow.document.write(`</body></html>`);
+            printWindow.document.close();
+            printWindow.print();
+        }
 
         // Function for voice feedback
         function speak(message) {
