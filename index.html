@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Scanner / Reader</title>
     <script src="html5-qrcode.min.js"></script>
-    <style>
+     <style>
         body {
             display: flex;
             justify-content: center;
@@ -69,6 +69,11 @@
             margin-top: 10px;
         }
 
+        img {
+            border-radius: 50%;
+            margin-top: 15px;
+        }
+
         table {
             width: 100%;
             margin-bottom: 20px;
@@ -106,42 +111,6 @@
                 max-width: 100%;
             }
         }
-
-        /* Style for the receipt printout */
-        #receipt {
-            display: none;
-        }
-
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-
-            #receipt, #receipt * {
-                visibility: visible;
-            }
-
-            #receipt {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 20px;
-                text-align: left;
-                border: none;
-                box-shadow: none;
-            }
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 20px;
-            }
-
-            table, th, td {
-                border: none;
-            }
-        }
     </style>
 </head>
 <body>
@@ -154,124 +123,84 @@
             <div class="col">
                 <h4>SCAN RESULT</h4>
                 <div id="result">Result Here</div>
+                <img id="profile-image" src="" alt="Profile Image" style="display:none;" width="100">
                 <button onclick="copyToClipboard()">Copy to Clipboard</button>
-                <button onclick="printReceipt()">Print Receipt</button>
-                <button onclick="downloadProductList()">Download</button>
             </div>
         </div>
 
-        <!-- Form to display scanned products -->
+        <!-- Form to display scanned product info -->
         <form id="scanned-products-form">
             <table id="product-table">
                 <thead>
                     <tr>
                         <th>Purchase Code</th>
                         <th>Full Name</th>
-                        <th>Barangay</th>
                         <th>Username</th>
-                        <th>Facebook Profile Image</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Products will be appended here -->
+                    <!-- Data will be appended here -->
                 </tbody>
             </table>
         </form>
 
-        <button onclick="resetScanner()">Reset</button>
-    </div>
-
-    <!-- Receipt Section -->
-    <div id="receipt">
-        <h2>Receipt</h2>
-        <table id="receipt-table">
-            <thead>
-                <tr>
-                    <th>Purchase Code</th>
-                    <th>Full Name</th>
-                    <th>Barangay</th>
-                    <th>Username</th>
-                    <th>Facebook Profile Image</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Products will be inserted here for printing -->
-            </tbody>
-        </table>
+        <button onclick="location.reload();">Reset</button>
     </div>
 
     <script type="text/javascript">
-        let html5QrcodeScanner;
+        let isProcessing = false; // Variable to control scan delay
+        let scannedProducts = []; // Array to store scanned products
 
         function onScanSuccess(qrCodeMessage) {
-            console.log("QR Code Data: ", qrCodeMessage); // Debugging
+            if (isProcessing) return; // Ignore scans during the delay
+            isProcessing = true;
 
             try {
+                // Extract data from the scanned QR code
                 const qrData = JSON.parse(qrCodeMessage);
+                const { Purchase_code, full_name, email, facebook_profile_image } = qrData;
 
-                // Debugging: Check if fields exist
-                console.log("Parsed Data: ", qrData);
+                scannedProducts.push({ Purchase_code, full_name, email });
 
-                const { purchase_code, full_name, barangay, username, facebook_profile_image } = qrData;
+                // Add data to the table
+                const productTable = document.querySelector('#product-table tbody');
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `<td>${Purchase_code}</td><td>${full_name}</td><td>${email}</td>`;
+                productTable.appendChild(newRow);
 
-                // Check if the expected fields are defined
-                if (purchase_code && full_name && barangay && username && facebook_profile_image) {
-                    // Add product to the table
-                    const productTable = document.querySelector('#product-table tbody');
-                    const newRow = document.createElement('tr');
-                    newRow.innerHTML = `
-                        <td>${purchase_code}</td>
-                        <td>${full_name}</td>
-                        <td>${barangay}</td>
-                        <td>${username}</td>
-                        <td><img src="${facebook_profile_image}" alt="Facebook Profile Image" style="width: 50px; height: 50px;"></td>
-                    `;
-                    productTable.appendChild(newRow);
+                // Display profile image
+                const profileImage = document.getElementById('profile-image');
+                profileImage.src = facebook_profile_image;
+                profileImage.style.display = 'block';
 
-                    // Voice feedback
-                    speak(`Scanned Purchase Code: ${purchase_code}, Full Name: ${full_name}`);
+                // Voice feedback
+                speak(`Scanned customer: ${full_name}`);
 
-                    // Stop scanning after the first successful scan
-                    stopScanning();
-                } else {
-                    document.getElementById('result').innerHTML = `<span class="result">QR Code data is incomplete or missing fields.</span>`;
-                }
             } catch (error) {
                 document.getElementById('result').innerHTML = `<span class="result">Invalid QR Code Data</span>`;
             }
+
+            // 10-second delay
+            setTimeout(() => {
+                isProcessing = false;
+            }, 10000);
         }
 
         function onScanError(errorMessage) {
-            console.error("Scan Error: ", errorMessage); // Debugging
+            // Handle scan error
         }
 
-        function stopScanning() {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear();
-                html5QrcodeScanner = null;
-            }
-        }
-
-        function resetScanner() {
-            if (html5QrcodeScanner) {
-                stopScanning();
-            }
-            html5QrcodeScanner = new Html5QrcodeScanner(
-                "my-qr-reader", { fps: 10, qrbox: 250 }
-            );
-            html5QrcodeScanner.render(onScanSuccess, onScanError);
-        }
-
-        resetScanner(); // Initialize the scanner when the page loads
+        var html5QrcodeScanner = new Html5QrcodeScanner(
+            "my-qr-reader", { fps: 10, qrbox: 250 }
+        );
+        html5QrcodeScanner.render(onScanSuccess, onScanError);
 
         function copyToClipboard() {
             let resultText = "";
-            const rows = document.querySelectorAll('#product-table tbody tr');
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                resultText += `Purchase Code: ${cells[0].innerText}, Full Name: ${cells[1].innerText}, Barangay: ${cells[2].innerText}, Username: ${cells[3].innerText}, Facebook Profile Image: ${cells[4].querySelector('img').src}\n\n`;
+            scannedProducts.forEach(product => {
+                 resultText += `Purchase Code: ${product.Purchase_code}, Full Name: ${product.full_name}, Email: ${product.email}\n\n`; // Adding an extra newline
             });
-
+           
             // Create a temporary input to copy text to clipboard
             const tempInput = document.createElement('input');
             document.body.appendChild(tempInput);
@@ -283,53 +212,12 @@
             alert('Result copied to clipboard!');
         }
 
-        function printReceipt() {
-            // Copy the scanned products to the receipt section
-            const receiptTable = document.querySelector('#receipt-table tbody');
-            receiptTable.innerHTML = ''; // Clear previous content
-            const rows = document.querySelectorAll('#product-table tbody tr');
-            rows.forEach(row => {
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = row.innerHTML;
-                receiptTable.appendChild(newRow);
-            });
-
-            // Show the receipt section
-            document.getElementById('receipt').style.display = 'block';
-
-            // Trigger the print
-            window.print();
-
-            // Hide the receipt section after printing
-            document.getElementById('receipt').style.display = 'none';
-        }
-
-        function downloadProductList() {
-            // Create a string with the list of scanned products
-            let productList = "Scanned Products List:\n\n";
-            const rows = document.querySelectorAll('#product-table tbody tr');
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                productList += `Purchase Code: ${cells[0].innerText}, Full Name: ${cells[1].innerText}, Barangay: ${cells[2].innerText}, Username: ${cells[3].innerText}, Facebook Profile Image: ${cells[4].querySelector('img').src}\n`;
-            });
-
-            // Create a Blob with the product list data
-            const blob = new Blob([productList], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-
-            // Create a temporary link element to trigger the download
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'product_list.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function speak(text) {
-            const msg = new SpeechSynthesisUtterance(text);
-            window.speechSynthesis.speak(msg);
+        // Function for voice feedback
+        function speak(message) {
+            const speech = new SpeechSynthesisUtterance(message);
+            speech.lang = 'en-US'; // Set language to English
+            speech.rate = 1; // Normal speaking rate
+            window.speechSynthesis.speak(speech);
         }
     </script>
 </body>
