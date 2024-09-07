@@ -165,7 +165,7 @@
             <table id="product-table">
                 <thead>
                     <tr>
-                        <th>Farmer ID</th>
+                        <th>Purchase Code</th>
                         <th>Full Name</th>
                         <th>Barangay</th>
                         <th>Username</th>
@@ -187,7 +187,7 @@
         <table id="receipt-table">
             <thead>
                 <tr>
-                    <th>Farmer ID</th>
+                    <th>Purchase Code</th>
                     <th>Full Name</th>
                     <th>Barangay</th>
                     <th>Username</th>
@@ -204,13 +204,13 @@
         function onScanSuccess(qrCodeMessage) {
             try {
                 const qrData = JSON.parse(qrCodeMessage);
-                const { farmer_id, full_name, barangay, username, facebook_profile_image } = qrData;
+                const { purchase_code, full_name, barangay, username, facebook_profile_image } = qrData;
 
                 // Add product to the table
                 const productTable = document.querySelector('#product-table tbody');
                 const newRow = document.createElement('tr');
                 newRow.innerHTML = `
-                    <td>${farmer_id}</td>
+                    <td>${purchase_code}</td>
                     <td>${full_name}</td>
                     <td>${barangay}</td>
                     <td>${username}</td>
@@ -219,7 +219,7 @@
                 productTable.appendChild(newRow);
 
                 // Voice feedback
-                speak(`Scanned farmer ID: ${farmer_id}, Full Name: ${full_name}`);
+                speak(`Scanned Purchase Code: ${purchase_code}, Full Name: ${full_name}`);
 
             } catch (error) {
                 document.getElementById('result').innerHTML = `<span class="result">Invalid QR Code Data</span>`;
@@ -240,7 +240,7 @@
             const rows = document.querySelectorAll('#product-table tbody tr');
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
-                resultText += `Farmer ID: ${cells[0].innerText}, Full Name: ${cells[1].innerText}, Barangay: ${cells[2].innerText}, Username: ${cells[3].innerText}, Facebook Profile Image: ${cells[4].querySelector('img').src}\n\n`;
+                resultText += `Purchase Code: ${cells[0].innerText}, Full Name: ${cells[1].innerText}, Barangay: ${cells[2].innerText}, Username: ${cells[3].innerText}, Facebook Profile Image: ${cells[4].querySelector('img').src}\n\n`;
             });
 
             // Create a temporary input to copy text to clipboard
@@ -281,7 +281,7 @@
             const rows = document.querySelectorAll('#product-table tbody tr');
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
-                productList += `Farmer ID: ${cells[0].innerText}, Full Name: ${cells[1].innerText}, Barangay: ${cells[2].innerText}, Username: ${cells[3].innerText}, Facebook Profile Image: ${cells[4].querySelector('img').src}\n`;
+                productList += `Purchase Code: ${cells[0].innerText}, Full Name: ${cells[1].innerText}, Barangay: ${cells[2].innerText}, Username: ${cells[3].innerText}, Facebook Profile Image: ${cells[4].querySelector('img').src}\n`;
             });
 
             // Create a Blob with the product list data
@@ -291,18 +291,16 @@
             // Create a temporary link element to trigger the download
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'scanned_products_list.txt';
+            a.download = 'product_list.txt';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-
-            // Revoke the Blob URL
             URL.revokeObjectURL(url);
         }
 
         function speak(text) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            speechSynthesis.speak(utterance);
+            const msg = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(msg);
         }
     </script>
 </body>
