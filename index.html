@@ -144,10 +144,10 @@
                 document.getElementById('result').innerHTML = `<span class="result">Invalid QR Code Data</span>`;
             }
 
-            // 3-second delay before processing the next scan
+            // 9-second delay before processing the next scan
             setTimeout(() => {
                 isProcessing = false;
-            }, 3000);
+            }, 9000);
         }
 
         function onScanError(errorMessage) {
