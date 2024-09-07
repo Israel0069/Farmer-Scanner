@@ -178,7 +178,7 @@
             </table>
         </form>
 
-        <button onclick="location.reload();">Reset</button>
+        <button onclick="resetScanner()">Reset</button>
     </div>
 
     <!-- Receipt Section -->
@@ -201,39 +201,68 @@
     </div>
 
     <script type="text/javascript">
+        let html5QrcodeScanner;
+
         function onScanSuccess(qrCodeMessage) {
+            console.log("QR Code Data: ", qrCodeMessage); // Debugging
+
             try {
                 const qrData = JSON.parse(qrCodeMessage);
+
+                // Debugging: Check if fields exist
+                console.log("Parsed Data: ", qrData);
+
                 const { purchase_code, full_name, barangay, username, facebook_profile_image } = qrData;
 
-                // Add product to the table
-                const productTable = document.querySelector('#product-table tbody');
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `
-                    <td>${purchase_code}</td>
-                    <td>${full_name}</td>
-                    <td>${barangay}</td>
-                    <td>${username}</td>
-                    <td><img src="${facebook_profile_image}" alt="Facebook Profile Image" style="width: 50px; height: 50px;"></td>
-                `;
-                productTable.appendChild(newRow);
+                // Check if the expected fields are defined
+                if (purchase_code && full_name && barangay && username && facebook_profile_image) {
+                    // Add product to the table
+                    const productTable = document.querySelector('#product-table tbody');
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${purchase_code}</td>
+                        <td>${full_name}</td>
+                        <td>${barangay}</td>
+                        <td>${username}</td>
+                        <td><img src="${facebook_profile_image}" alt="Facebook Profile Image" style="width: 50px; height: 50px;"></td>
+                    `;
+                    productTable.appendChild(newRow);
 
-                // Voice feedback
-                speak(`Scanned Purchase Code: ${purchase_code}, Full Name: ${full_name}`);
+                    // Voice feedback
+                    speak(`Scanned Purchase Code: ${purchase_code}, Full Name: ${full_name}`);
 
+                    // Stop scanning after the first successful scan
+                    stopScanning();
+                } else {
+                    document.getElementById('result').innerHTML = `<span class="result">QR Code data is incomplete or missing fields.</span>`;
+                }
             } catch (error) {
                 document.getElementById('result').innerHTML = `<span class="result">Invalid QR Code Data</span>`;
             }
         }
 
         function onScanError(errorMessage) {
-            // Handle scan error
+            console.error("Scan Error: ", errorMessage); // Debugging
         }
 
-        var html5QrcodeScanner = new Html5QrcodeScanner(
-            "my-qr-reader", { fps: 10, qrbox: 250 }
-        );
-        html5QrcodeScanner.render(onScanSuccess, onScanError);
+        function stopScanning() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear();
+                html5QrcodeScanner = null;
+            }
+        }
+
+        function resetScanner() {
+            if (html5QrcodeScanner) {
+                stopScanning();
+            }
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "my-qr-reader", { fps: 10, qrbox: 250 }
+            );
+            html5QrcodeScanner.render(onScanSuccess, onScanError);
+        }
+
+        resetScanner(); // Initialize the scanner when the page loads
 
         function copyToClipboard() {
             let resultText = "";
